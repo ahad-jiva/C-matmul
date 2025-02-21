@@ -1,2 +1,2 @@
 # C-matmul
-Matrix multiplier written in C
+A high-performance, parallelized matrix multiplier and determinant solver.
