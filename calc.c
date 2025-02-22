@@ -25,7 +25,7 @@ int main(){
     int B;
     int M;
 
-    int matrix_dimension = 3;
+    int matrix_dimension = 128;
     int matrix_size = matrix_dimension * matrix_dimension;
 
     // setting up shared memory if we are the first process
@@ -33,18 +33,18 @@ int main(){
 
         // matrix A
         A = shm_open("matrixA", O_CREAT | O_RDWR, 0777);
-        ftruncate(A, matrix_size);
-        matrixA = (int *)mmap(NULL, matrix_size, PROT_READ | PROT_WRITE, MAP_SHARED, A, 0);
+        ftruncate(A, matrix_size*4);
+        matrixA = (int *)mmap(NULL, matrix_size*4, PROT_READ | PROT_WRITE, MAP_SHARED, A, 0);
 
         // matrix B
         B = shm_open("matrixB", O_CREAT | O_RDWR, 0777);
-        ftruncate(B, matrix_size);
-        matrixB = (int *)mmap(NULL, matrix_size, PROT_READ | PROT_WRITE, MAP_SHARED, B, 0);
+        ftruncate(B, matrix_size*4);
+        matrixB = (int *)mmap(NULL, matrix_size*4, PROT_READ | PROT_WRITE, MAP_SHARED, B, 0);
 
-        // matrix C
+        // matrix M
         M = shm_open("matrixM", O_CREAT | O_RDWR, 0777);
-        ftruncate(M, matrix_size);
-        matrixM = (int *)mmap(NULL, matrix_size, PROT_READ | PROT_WRITE, MAP_SHARED, M, 0);
+        ftruncate(M, matrix_size*4);
+        matrixM = (int *)mmap(NULL, matrix_size*4, PROT_READ | PROT_WRITE, MAP_SHARED, M, 0);
     } else {
         // matrix A
         A = shm_open("matrixA", O_RDWR, 0777);
