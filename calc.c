@@ -44,7 +44,7 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
     int B;
     int M;
 
-    int matrix_dimension = 64;
+    int matrix_dimension = 100;
     int matrix_size = matrix_dimension * matrix_dimension;
 
     // gather function intialization
@@ -78,7 +78,6 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
         matrixM = (int *)mmap(NULL, matrix_size*4, PROT_READ | PROT_WRITE, MAP_SHARED, M, 0);
         
         // initialize matrix with random values
-        //srand(time(NULL));  // random seed
         for (int i = 0; i < matrix_size; i++){
             matrixA[i] = rand() % 10;
             matrixB[i] = rand() % 10;
@@ -102,15 +101,15 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
 
         // matrix A
         A = shm_open("matrixA", O_RDWR, 0777);
-        matrixA = (int *)mmap(NULL, matrix_size, PROT_READ | PROT_WRITE, MAP_SHARED, A, 0);
+        matrixA = (int *)mmap(NULL, matrix_size*4, PROT_READ | PROT_WRITE, MAP_SHARED, A, 0);
 
         // matrix B
         B = shm_open("matrixB", O_RDWR, 0777);
-        matrixB = (int *)mmap(NULL, matrix_size, PROT_READ | PROT_WRITE, MAP_SHARED, B, 0);
+        matrixB = (int *)mmap(NULL, matrix_size*4, PROT_READ | PROT_WRITE, MAP_SHARED, B, 0);
 
         // matrix C
         M = shm_open("matrixM", O_RDWR, 0777);
-        matrixM = (int *)mmap(NULL, matrix_size, PROT_READ | PROT_WRITE, MAP_SHARED, M, 0);
+        matrixM = (int *)mmap(NULL, matrix_size*4, PROT_READ | PROT_WRITE, MAP_SHARED, M, 0);
         
     }
     int offset = matrix_dimension % process_count;
@@ -179,27 +178,6 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
     synch(process_id, process_count, ready);
     // print all matrices (only for debugging)
     if (process_id == 0){
-        // printf("Matrix A:\n");
-        // for (int i = 0; i < matrix_dimension; i++){
-        //     for (int j = 0; j < matrix_dimension; j++){
-        //         printf("%d ", matrixA[i * matrix_dimension + j]);
-        //     }
-        //     printf("\n");
-        // }
-        // printf("Matrix B:\n");
-        // for (int i = 0; i < matrix_dimension; i++){
-        //     for (int j = 0; j < matrix_dimension; j++){
-        //         printf("%d ", matrixB[i * matrix_dimension + j]);
-        //     }
-        //     printf("\n");
-        // }
-        // printf("Matrix M:\n");
-        // for (int i = 0; i < matrix_dimension; i++){
-        //     for (int j = 0; j < matrix_dimension; j++){
-        //         printf("%d ", matrixM[i * matrix_dimension + j]);
-        //     }
-        //     printf("\n");
-        // }
 
         // sum of diagonal elements of matrix M
         long double sum = 0;
@@ -210,8 +188,6 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
     } else {
         return 0;
     }
-
-    
 
     // // det(M) calculation with LU decomposition, only for process 0 to do
     // if (process_id == 0){
