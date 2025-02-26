@@ -44,7 +44,7 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
     int B;
     int M;
 
-    int matrix_dimension = 100;
+    int matrix_dimension = 64;
     int matrix_size = matrix_dimension * matrix_dimension;
 
     // gather function intialization
@@ -111,96 +111,95 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
         // matrix C
         M = shm_open("matrixM", O_RDWR, 0777);
         matrixM = (int *)mmap(NULL, matrix_size, PROT_READ | PROT_WRITE, MAP_SHARED, M, 0);
+        
     }
-
     int offset = matrix_dimension % process_count;
     if (process_id + 1 == process_count){
+
         synch(process_id, process_count, ready);
-    // matrix multiplication M = A * B
-    for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count) + offset; i++){
-        for (int j = 0; j < matrix_dimension; j++){
-            for (int k = 0; k < matrix_dimension; k++){
-                matrixM[i * matrix_dimension + j] += matrixA[i * matrix_dimension + k] * matrixB[k * matrix_dimension + j];
+        // matrix multiplication M = A * B
+        for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count) + offset; i++){
+            for (int j = 0; j < matrix_dimension; j++){
+                for (int k = 0; k < matrix_dimension; k++){
+                    matrixM[i * matrix_dimension + j] += matrixA[i * matrix_dimension + k] * matrixB[k * matrix_dimension + j];
+                }
             }
         }
-    }
+        synch(process_id, process_count, ready);
+        // matrix muliplication B = M * A
+        for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count) + offset; i++){
+            for (int j = 0; j < matrix_dimension; j++){
+                for (int k = 0; k < matrix_dimension; k++){
+                    matrixB[i * matrix_dimension + j] += matrixM[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
+                }
+            }
+        }
+        synch(process_id, process_count, ready);
+        // matrix multiplication M = B * A
+        for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count) + offset; i++){
+            for (int j = 0; j < matrix_dimension; j++){
+                for (int k = 0; k < matrix_dimension; k++){
+                    matrixM[i * matrix_dimension + j] += matrixB[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
+                }
+            }
+        }
 
-    synch(process_id, process_count, ready);
-    // matrix muliplication B = M * A
-    for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count) + offset; i++){
-        for (int j = 0; j < matrix_dimension; j++){
-            for (int k = 0; k < matrix_dimension; k++){
-                matrixB[i * matrix_dimension + j] += matrixM[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
+    } else { // all other processes
+        synch(process_id, process_count, ready);
+        // matrix multiplication M = A * B
+        for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count); i++){
+            for (int j = 0; j < matrix_dimension; j++){
+                for (int k = 0; k < matrix_dimension; k++){
+                    matrixM[i * matrix_dimension + j] += matrixA[i * matrix_dimension + k] * matrixB[k * matrix_dimension + j];
+                }
             }
         }
-    }
 
-    synch(process_id, process_count, ready);
-    // matrix multiplication M = B * A
-    for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count) + offset; i++){
-        for (int j = 0; j < matrix_dimension; j++){
-            for (int k = 0; k < matrix_dimension; k++){
-                matrixM[i * matrix_dimension + j] += matrixB[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
+        synch(process_id, process_count, ready);
+        // matrix muliplication B = M * A
+        for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count); i++){
+            for (int j = 0; j < matrix_dimension; j++){
+                for (int k = 0; k < matrix_dimension; k++){
+                    matrixB[i * matrix_dimension + j] += matrixM[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
+                }
             }
         }
-    }
-    } else {
 
-    synch(process_id, process_count, ready);
-    // matrix multiplication M = A * B
-    for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count); i++){
-        for (int j = 0; j < matrix_dimension; j++){
-            for (int k = 0; k < matrix_dimension; k++){
-                matrixM[i * matrix_dimension + j] += matrixA[i * matrix_dimension + k] * matrixB[k * matrix_dimension + j];
+        synch(process_id, process_count, ready);
+        // matrix multiplication M = B * A
+        for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count); i++){
+            for (int j = 0; j < matrix_dimension; j++){
+                for (int k = 0; k < matrix_dimension; k++){
+                    matrixM[i * matrix_dimension + j] += matrixB[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
+                }
             }
         }
-    }
-
-    synch(process_id, process_count, ready);
-    // matrix muliplication B = M * A
-    for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count); i++){
-        for (int j = 0; j < matrix_dimension; j++){
-            for (int k = 0; k < matrix_dimension; k++){
-                matrixB[i * matrix_dimension + j] += matrixM[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
-            }
-        }
-    }
-
-    synch(process_id, process_count, ready);
-    // matrix multiplication M = B * A
-    for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count); i++){
-        for (int j = 0; j < matrix_dimension; j++){
-            for (int k = 0; k < matrix_dimension; k++){
-                matrixM[i * matrix_dimension + j] += matrixB[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
-            }
-        }
-    }
 }
 
     synch(process_id, process_count, ready);
     // print all matrices (only for debugging)
     if (process_id == 0){
-        printf("Matrix A:\n");
-        for (int i = 0; i < matrix_dimension; i++){
-            for (int j = 0; j < matrix_dimension; j++){
-                printf("%d ", matrixA[i * matrix_dimension + j]);
-            }
-            printf("\n");
-        }
-        printf("Matrix B:\n");
-        for (int i = 0; i < matrix_dimension; i++){
-            for (int j = 0; j < matrix_dimension; j++){
-                printf("%d ", matrixB[i * matrix_dimension + j]);
-            }
-            printf("\n");
-        }
-        printf("Matrix M:\n");
-        for (int i = 0; i < matrix_dimension; i++){
-            for (int j = 0; j < matrix_dimension; j++){
-                printf("%d ", matrixM[i * matrix_dimension + j]);
-            }
-            printf("\n");
-        }
+        // printf("Matrix A:\n");
+        // for (int i = 0; i < matrix_dimension; i++){
+        //     for (int j = 0; j < matrix_dimension; j++){
+        //         printf("%d ", matrixA[i * matrix_dimension + j]);
+        //     }
+        //     printf("\n");
+        // }
+        // printf("Matrix B:\n");
+        // for (int i = 0; i < matrix_dimension; i++){
+        //     for (int j = 0; j < matrix_dimension; j++){
+        //         printf("%d ", matrixB[i * matrix_dimension + j]);
+        //     }
+        //     printf("\n");
+        // }
+        // printf("Matrix M:\n");
+        // for (int i = 0; i < matrix_dimension; i++){
+        //     for (int j = 0; j < matrix_dimension; j++){
+        //         printf("%d ", matrixM[i * matrix_dimension + j]);
+        //     }
+        //     printf("\n");
+        // }
 
         // sum of diagonal elements of matrix M
         long double sum = 0;

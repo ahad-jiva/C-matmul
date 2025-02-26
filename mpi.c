@@ -21,13 +21,13 @@ int main(int argc, char *argv[]){   // mpi.c, called program, total process coun
 
     // executing multiple processes
     for (int i = 0; i < process_count; i++){
-        if (fork() == 0){   // child process
+        if (fork() == 0){
             // child process
             char process_id[10];
             char process_count_char[10];
             sprintf(process_id, "%d", i);
             sprintf(process_count_char, "%d", process_count);
-            char *args[] = {"./matmul", process_id, process_count_char, NULL};
+            char *args[] = {exe, process_id, process_count_char, NULL};
             execv(exe, args);
         }
     }
