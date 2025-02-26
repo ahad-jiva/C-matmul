@@ -113,6 +113,7 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
         
     }
     int offset = matrix_dimension % process_count;
+    clock_t start = clock();
     if (process_id + 1 == process_count){
 
         synch(process_id, process_count, ready);
@@ -184,7 +185,10 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
         for (int i = 0; i < matrix_dimension; i++){
             sum += matrixM[i * matrix_dimension + i];
         }
-        printf("∑diag(M) = %.Lf\n", sum);  
+        clock_t end = clock();
+        double time = ((double) (end - start)) / CLOCKS_PER_SEC;
+        printf("∑diag(M) = %.Lf\n", sum);
+        printf("Time taken: %f seconds.\n", time);
     } else {
         return 0;
     }
