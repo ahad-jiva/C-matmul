@@ -88,6 +88,17 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
             matrixM[i] = 0;
         }
 
+        // // transpose matrix B for speed
+        // int tempB[matrix_size];
+        // for (int i = 0; i < matrix_dimension; i++){
+        //     for (int j = 0; j < matrix_dimension; j++){
+        //         matrixB[j * matrix_dimension + i] = tempB[i * matrix_dimension + j];
+        //     }
+        // }
+        // for (int i = 0; i < matrix_size; i++){
+        //     matrixB[i] = tempB[i];
+        // }
+
     } else {
         while(1){
             if (shm_open("matrixM", O_RDWR, 0777) != -1){
@@ -113,11 +124,10 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
         
     }
     int offset = matrix_dimension % process_count;
-    clock_t start = clock();
-    if (process_id + 1 == process_count){
+    clock_t mm_start = clock();
 
+    if (process_id + 1 == process_count){   // last process will do a bit of extra work
         synch(process_id, process_count, ready);
-        // matrix multiplication M = A * B
         for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count) + offset; i++){
             for (int j = 0; j < matrix_dimension; j++){
                 for (int k = 0; k < matrix_dimension; k++){
@@ -125,28 +135,9 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
                 }
             }
         }
-        // synch(process_id, process_count, ready);
-        // // matrix muliplication B = M * A
-        // for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count) + offset; i++){
-        //     for (int j = 0; j < matrix_dimension; j++){
-        //         for (int k = 0; k < matrix_dimension; k++){
-        //             matrixB[i * matrix_dimension + j] += matrixM[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
-        //         }
-        //     }
-        // }
-        // synch(process_id, process_count, ready);
-        // // matrix multiplication M = B * A
-        // for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count) + offset; i++){
-        //     for (int j = 0; j < matrix_dimension; j++){
-        //         for (int k = 0; k < matrix_dimension; k++){
-        //             matrixM[i * matrix_dimension + j] += matrixB[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
-        //         }
-        //     }
-        // }
 
     } else { // all other processes
         synch(process_id, process_count, ready);
-        // matrix multiplication M = A * B
         for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count); i++){
             for (int j = 0; j < matrix_dimension; j++){
                 for (int k = 0; k < matrix_dimension; k++){
@@ -154,105 +145,98 @@ int main(int argc, char *argv[]){   // calc.c, process id, total process count
                 }
             }
         }
-
-        // synch(process_id, process_count, ready);
-        // // matrix muliplication B = M * A
-        // for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count); i++){
-        //     for (int j = 0; j < matrix_dimension; j++){
-        //         for (int k = 0; k < matrix_dimension; k++){
-        //             matrixB[i * matrix_dimension + j] += matrixM[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
-        //         }
-        //     }
-        // }
-
-        // synch(process_id, process_count, ready);
-        // // matrix multiplication M = B * A
-        // for (int i = process_id * (matrix_dimension / process_count); i < (process_id + 1) * (matrix_dimension / process_count); i++){
-        //     for (int j = 0; j < matrix_dimension; j++){
-        //         for (int k = 0; k < matrix_dimension; k++){
-        //             matrixM[i * matrix_dimension + j] += matrixB[i * matrix_dimension + k] * matrixA[k * matrix_dimension + j];
-        //         }
-        //     }
-        // }
-}
+    }
 
     synch(process_id, process_count, ready);
-    // print all matrices (only for debugging)
     if (process_id == 0){
+        // stop timer
+        clock_t mm_end = clock();
+        double mm_time = ((double) (mm_end - mm_start)) / CLOCKS_PER_SEC;
+        printf("Matmul took: %f seconds.\n", mm_time);
 
         // sum of diagonal elements of matrix M
         long long int sum = 0;
         for (int i = 0; i < matrix_dimension; i++){
             sum += matrixM[i * matrix_dimension + i];
         }
-        clock_t end = clock();
-        double time = ((double) (end - start)) / CLOCKS_PER_SEC;
         printf("∑diag(M) = %lld\n", sum);
-        printf("Time taken: %f seconds.\n", time);
     } else {
         return 0;
     }
 
-    // // det(M) calculation with LU decomposition, only for process 0 to do
-    // if (process_id == 0){
-    //     long double determinant = 1;
-    //     int i;
-    //     int j;
-    //     int k;
-    //     int pivot_point;
-    //     int sign = 1;
+    // det(M) calculation with LU decomposition, only for process 0 to do
+    if (process_id == 0){
+        if (matrix_dimension > 100){
+            printf("Matrix is too large for determinant calculation!\n");
+        } else {
+        long double determinant = 1;
+        int i;
+        int j;
+        int k;
+        int pivot_point;
+        int sign = 1;
 
-    //     // allocate memory for LU matrix
-    //     double *LU = (double *)malloc(matrix_size * sizeof(double));
+        // allocate memory for LU matrix
+        double *LU = (double *)malloc(matrix_size * sizeof(double));
 
-    //     // copy matrix M to LU
-    //     for (i = 0; i < matrix_size; i++){
-    //         LU[i] = matrixM[i];
-    //     }
+        // copy matrix M to LU
+        for (i = 0; i < matrix_size; i++){
+            LU[i] = matrixM[i];
+        }
 
-    //     // LU decomposition
-    //     for (k = 0; k < matrix_dimension; k++){
+        // start determinant timer
+        clock_t det_start = clock();
 
-    //         // find pivot point
-    //         pivot_point = k;
-    //         double max = fabs(LU[k * matrix_dimension + k]);
-    //         for (i = k + 1; i < matrix_dimension; i++){
-    //             if (fabs(LU[i * matrix_dimension + k]) > max){
-    //                 max = fabs(LU[i * matrix_dimension + k]);
-    //                 pivot_point = i;
-    //             }
-    //         }
+        // LU decomposition
+        for (k = 0; k < matrix_dimension; k++){
 
-    //         // swap rows, if necessary
-    //         if (pivot_point != k){
-    //             for (j = 0; j < matrix_dimension; j++){
-    //                 double temporary = LU[k * matrix_dimension + j];
-    //                 LU[k * matrix_dimension + j] = LU[pivot_point * matrix_dimension + j];
-    //                 LU[pivot_point * matrix_dimension + j] = temporary;
-    //             }
-    //             sign *= -1;
-    //         }
+            // find pivot point
+            pivot_point = k;
+            double max = fabs(LU[k * matrix_dimension + k]);
+            for (i = k + 1; i < matrix_dimension; i++){
+                if (fabs(LU[i * matrix_dimension + k]) > max){
+                    max = fabs(LU[i * matrix_dimension + k]);
+                    pivot_point = i;
+                }
+            }
 
-    //         // gaussian elimination
-    //         for (i = k + 1; i < matrix_dimension; i++){
-    //             LU[i * matrix_dimension + k] /= LU[k * matrix_dimension + k];
-    //             for (j = k + 1; j < matrix_dimension; j++){
-    //                 LU[i * matrix_dimension + j] -= LU[i * matrix_dimension + k] * LU[k * matrix_dimension + j];
-    //             }
-    //         }
-    //     }
+            // swap rows, if necessary
+            if (pivot_point != k){
+                for (j = 0; j < matrix_dimension; j++){
+                    double temporary = LU[k * matrix_dimension + j];
+                    LU[k * matrix_dimension + j] = LU[pivot_point * matrix_dimension + j];
+                    LU[pivot_point * matrix_dimension + j] = temporary;
+                }
+                sign *= -1;
+            }
 
-    //     // calculate determinant from diagonal entries of U
-    //     for (i = 0; i < matrix_dimension; i++){
-    //         determinant *= LU[i * matrix_dimension + i];
-    //     }
-    //     determinant *= sign;
+            // gaussian elimination
+            for (i = k + 1; i < matrix_dimension; i++){
+                LU[i * matrix_dimension + k] /= LU[k * matrix_dimension + k];
+                for (j = k + 1; j < matrix_dimension; j++){
+                    LU[i * matrix_dimension + j] -= LU[i * matrix_dimension + k] * LU[k * matrix_dimension + j];
+                }
+            }
+        }
 
-    //     printf("det(M): %.Lf\n", determinant);
+        // calculate determinant from diagonal entries of U
+        for (i = 0; i < matrix_dimension; i++){
+            determinant *= LU[i * matrix_dimension + i];
+        }
+        determinant *= sign;
 
-    //     // make sure to free memory
-    //     free(LU);       
-    // }
+        // stop determinant timer
+        clock_t det_end = clock();
+        double det_time = ((double) (det_end - det_start)) / CLOCKS_PER_SEC;
+
+        printf("Determinant calculation took %f seconds.\n", det_time);
+
+        printf("det(M): %.Lf\n", determinant);
+
+        // make sure to free memory
+        free(LU);       
+    }
+}
 
     // clean up
     close(A);
